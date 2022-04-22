@@ -219,5 +219,5 @@ public OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
         Logger_I("block", GeoData[playerid][E_GEO_BLOCK])
     );
     
-    CallLocalFunction("OnGeoDataReady", "%d", playerid);
+    CallLocalFunction("OnGeoDataReady", "d", playerid);
 }
