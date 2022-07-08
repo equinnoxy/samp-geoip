@@ -11,16 +11,29 @@
 
 
 #include <a_samp>
-#include <logger>
+#tryinclude <logger>
 #include <requests>
 #include <map>
 #include <YSI_Coding\y_hooks>
 
 
-#if !defined IPHUB_KEY
-    #error Must define `IPHUB_KEY` see iphub.info/api for details
+#if !defined _logger_included
+    static stock Logger_Fatal(const str[])
+    {
+        print(str);
+
+        //this will trigger a crash
+		new File:f = fopen("nonexistentfile", io_read), tmp[1];
+		fread(f, tmp);
+		fclose(f);
+    }
+	#define Logger_Dbg(%1);
+	#define Logger_Err(%1);
 #endif
 
+#if !defined MAX_IPHUB_KEY_LENGTH
+    #define MAX_IPHUB_KEY_LENGTH (64)
+#endif
 
 #if !defined MAX_GEOIP_COUNTRY_CODE
     #define MAX_GEOIP_COUNTRY_CODE (4)
@@ -143,9 +156,9 @@ stock GetPlayerIPBlock(playerid, &block) {
 
 
 hook OnScriptInit() {
-    new key[] = IPHUB_KEY;
-    if(strlen(key) == 0) {
-        Logger_Fatal("IPHUB_KEY must be set for geoip library");
+    new key[MAX_IPHUB_KEY_LENGTH + 1] = "";
+    if(!GetConsoleVarAsString("iphub_key", key, sizeof(key))) {
+        Logger_Fatal("`iphub_key` must be set in `config.json` for geoip library to work, see iphub.info/api for details.");
     }
 
     Client = RequestsClient("http://v2.api.iphub.info/ip/", RequestHeaders("X-Key", key));
@@ -167,9 +180,7 @@ hook OnPlayerDisconnect(playerid, reason) {
 }
 
 _geoip_doRequest(const addr[16], playerid) {
-    Logger_Dbg("geoip", "requesting ip data",
-        Logger_S("addr", addr),
-        Logger_I("playerid", playerid));
+    Logger_Dbg("geoip", "requesting ip data", Logger_S("addr", addr), Logger_I("playerid", playerid));
 
     new Request:r = RequestJSON(
         Client,
@@ -182,13 +193,10 @@ _geoip_doRequest(const addr[16], playerid) {
 }
 
 hook OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
-    Logger_Dbg("geoip", "received ip data",
-        Logger_I("request", _:id),
-        Logger_I("status", _:status));
+    Logger_Dbg("geoip", "received ip data", Logger_I("request", _:id), Logger_I("status", _:status));
 
     if(status != HTTP_STATUS_OK) {
-        Logger_Err("iphub response status code was not OK",
-            Logger_I("status", _:status));
+        Logger_Err("iphub response status code was not OK", Logger_I("status", _:status));
         return 1;
     }
 
@@ -197,8 +205,7 @@ hook OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
         return 1;
     }
 
-    Logger_Dbg("geoip", "determined target player for ip data",
-        Logger_I("playerid", playerid));
+    Logger_Dbg("geoip", "determined target player for ip data", Logger_I("playerid", playerid));
 
     // {
     //     "ip": "8.8.8.8",
@@ -216,14 +223,13 @@ hook OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
     JsonGetString(node, "isp", GeoData[playerid][E_GEO_ISP]);
     JsonGetInt(node, "block", GeoData[playerid][E_GEO_BLOCK]);
 
-    Logger_Dbg("geoip", "extracted ip data for player",
-        Logger_S("code", GeoData[playerid][E_GEO_CODE]),
-        Logger_S("name", GeoData[playerid][E_GEO_NAME]),
-        Logger_I("asn", GeoData[playerid][E_GEO_ASN]),
-        Logger_S("isp", GeoData[playerid][E_GEO_ISP]),
-        Logger_I("block", GeoData[playerid][E_GEO_BLOCK])
-    );
+    Logger_Dbg("geoip", "extracted ip data for player", Logger_S("code", GeoData[playerid][E_GEO_CODE]), Logger_S("name", GeoData[playerid][E_GEO_NAME]), Logger_I("asn", GeoData[playerid][E_GEO_ASN]), Logger_S("isp", GeoData[playerid][E_GEO_ISP]), Logger_I("block", GeoData[playerid][E_GEO_BLOCK]));
     
     CallLocalFunction("OnGeoDataReady", "d", playerid);
 	return 1;
 }
+
+#if !defined _logger_included
+	#undef Logger_Dbg
+	#undef Logger_Err
+#endif
