@@ -66,7 +66,12 @@ stock bool:IsGeoDataReady(playerid) {
     return GeoData[playerid][E_GEO_READY];
 }
 
-stock GetPlayerCountryCode(playerid, output[], len = sizeof output) {
+stock GeoIP_GetPlayerId(Request:id) {
+    new playerid = MAP_get_val_val(RequestToPlayer, _:id);
+	return playerid;
+}
+
+stock GetPlayerCountryCode(playerid, output[], len = sizeof(output)) {
     if(!IsPlayerConnected(playerid)) {
         return 1;
     }
@@ -79,7 +84,7 @@ stock GetPlayerCountryCode(playerid, output[], len = sizeof output) {
     return 0;
 }
 
-stock GetPlayerCountryName(playerid, output[], len = sizeof output) {
+stock GetPlayerCountryName(playerid, output[], len = sizeof(output)) {
     if(!IsPlayerConnected(playerid)) {
         return 1;
     }
@@ -105,7 +110,7 @@ stock GetPlayerASN(playerid, &asn) {
     return 0;
 }
 
-stock GetPlayerISP(playerid, output[], len = sizeof output) {
+stock GetPlayerISP(playerid, output[], len = sizeof(output)) {
     if(!IsPlayerConnected(playerid)) {
         return 1;
     }
@@ -148,7 +153,7 @@ hook OnScriptInit() {
 
 hook OnPlayerConnect(playerid) {
     new addr[16];
-    GetPlayerIp(playerid, addr, sizeof addr);
+    GetPlayerIp(playerid, addr, sizeof(addr));
     _geoip_doRequest(addr, playerid);
 }
 
@@ -176,7 +181,7 @@ _geoip_doRequest(const addr[16], playerid) {
     MAP_insert_val_val(RequestToPlayer, _:r, playerid);
 }
 
-public OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
+hook OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
     Logger_Dbg("geoip", "received ip data",
         Logger_I("request", _:id),
         Logger_I("status", _:status));
@@ -184,12 +189,12 @@ public OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
     if(status != HTTP_STATUS_OK) {
         Logger_Err("iphub response status code was not OK",
             Logger_I("status", _:status));
-        return;
+        return 1;
     }
 
     new playerid = MAP_get_val_val(RequestToPlayer, _:id);
     if(!IsPlayerConnected(playerid)) {
-        return;
+        return 1;
     }
 
     Logger_Dbg("geoip", "determined target player for ip data",
@@ -205,10 +210,10 @@ public OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
     // }
 
     GeoData[playerid][E_GEO_READY] = true;
-    JsonGetString(node, "countryCode", GeoData[playerid][E_GEO_CODE], 4);
-    JsonGetString(node, "countryName", GeoData[playerid][E_GEO_NAME], 128);
+    JsonGetString(node, "countryCode", GeoData[playerid][E_GEO_CODE]);
+    JsonGetString(node, "countryName", GeoData[playerid][E_GEO_NAME]);
     JsonGetInt(node, "asn", GeoData[playerid][E_GEO_ASN]);
-    JsonGetString(node, "isp", GeoData[playerid][E_GEO_ISP], 128);
+    JsonGetString(node, "isp", GeoData[playerid][E_GEO_ISP]);
     JsonGetInt(node, "block", GeoData[playerid][E_GEO_BLOCK]);
 
     Logger_Dbg("geoip", "extracted ip data for player",
@@ -220,4 +225,5 @@ public OnGeoResponse(Request:id, E_HTTP_STATUS:status, Node:node) {
     );
     
     CallLocalFunction("OnGeoDataReady", "d", playerid);
+	return 1;
 }
