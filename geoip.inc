@@ -21,11 +21,7 @@
     static stock Logger_Fatal(const str[])
     {
         print(str);
-
-        //this will trigger a crash
-		new File:f = fopen("nonexistentfile", io_read), tmp[1];
-		fread(f, tmp);
-		fclose(f);
+        SendRconCommand("exit");
     }
 	#define Logger_Dbg(%1);
 	#define Logger_Err(%1);
