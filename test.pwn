@@ -1,4 +1,3 @@
-#include "iphub_key"
 #include "geoip"
 
 main() {
@@ -15,19 +14,15 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
         new
             code[MAX_GEOIP_COUNTRY_CODE],
             name[MAX_GEOIP_COUNTRY_NAME],
-            asn,
-            isp[MAX_GEOIP_ISP_NAME],
             block,
             str[128];
 
         GetPlayerCountryCode(playerid, code);
         GetPlayerCountryName(playerid, name);
-        GetPlayerASN(playerid, asn);
-        GetPlayerISP(playerid, isp);
         GetPlayerIPBlock(playerid, block);
 
         format(str, sizeof str,
-            "Country: %s (%s), ASN: %d, ISP: '%s', Block: %d",
+            "Country: %s (%s), Block: %d",
             name, code, asn, isp, block);
         
         SendClientMessage(playerid, -1, str);
