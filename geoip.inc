@@ -169,7 +169,10 @@ hook OnPlayerDisconnect(playerid, reason) {
 
 _geoip_doRequest(const addr[16], playerid) {
 	Logger_Dbg("geoip", "requesting ip data", Logger_S("addr", addr), Logger_I("playerid", playerid));
-	HTTP(playerid, HTTP_GET, va_return("ip-api.com/json/%s?fields=status,message,country,countryCode,proxy,hosting", addr), "", "OnGeoResponse");
+
+	new requestAddress[88];
+	format(requestAddress, sizeof(requestAddress), "ip-api.com/json/%s?fields=status,message,country,countryCode,proxy,hosting", addr);
+	HTTP(playerid, HTTP_GET, requestAddress, "", "OnGeoResponse");
 }
 
 hook OnGeoResponse(playerid, response_code, data[]) {
