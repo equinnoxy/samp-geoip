@@ -161,10 +161,12 @@ hook OnPlayerConnect(playerid) {
 	new addr[16];
 	GetPlayerIp(playerid, addr);
 	_geoip_doRequest(addr, playerid);
+	return 1;
 }
 
 hook OnPlayerDisconnect(playerid, reason) {
 	ResetState(playerid);
+	return 1;
 }
 
 _geoip_doRequest(const addr[16], playerid) {
