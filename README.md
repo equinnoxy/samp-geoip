@@ -14,7 +14,7 @@ by using Redis as a cache.
 Simply install to your project:
 
 ```bash
-sampctl package install ZantetsukenGT/samp-geoip
+sampctl package install equinnoxy/samp-geoip
 ```
 
 Include in your code and begin using the library:
@@ -39,6 +39,8 @@ The rest of the API corresponds directly to the
 *   `GetPlayerIPMessage(playerid, output[], len = sizeof output)`
 *   `GetPlayerCountryCode(playerid, output[], len = sizeof output)`
 *   `GetPlayerCountryName(playerid, output[], len = sizeof output)`
+*   `GetPlayerISP(playerid, output[], len = sizeof output)`
+*   `GetPlayerCity(playerid, output[], len = sizeof output)`
 *   `GetPlayerIPBlock(playerid, &block)`
 
 There is also an event that is called when the data is available:
