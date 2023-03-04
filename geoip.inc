@@ -30,8 +30,16 @@
 	#define MAX_GEOIP_COUNTRY_NAME (128)
 #endif
 
+#if !defined MAX_GEOIP_CITY_NAME
+	#define MAX_GEOIP_CITY_NAME (128)
+#endif
+
 #if !defined MAX_GEOIP_COUNTRY_CODE
 	#define MAX_GEOIP_COUNTRY_CODE (4)
+#endif
+
+#if !defined MAX_GEOIP_ISP_NAME
+    #define MAX_GEOIP_ISP_NAME (128)
 #endif
 
 // E_GEO_DATA matches the ip-api response object, minus the IP address itself
@@ -40,6 +48,8 @@ enum E_GEO_DATA {
 	E_GEO_STATUS[MAX_GEOIP_STATUS],		// "status": "success", "fail",
 	E_GEO_MESSAGE[MAX_GEOIP_MESSAGE],	// "message": "private range", "reserved range", "invalid query",
 	E_GEO_NAME[MAX_GEOIP_COUNTRY_NAME],	// "country": "United States",
+	E_GEO_CITY[MAX_GEOIP_CITY_NAME],
+	E_GEO_ISP[MAX_GEOIP_ISP_NAME],      // "isp": "GOOGLE - Google Inc.",
 	E_GEO_CODE[MAX_GEOIP_COUNTRY_CODE],	// "countryCode": "US",
 	bool:E_GEO_PROXY,					// "proxy": true
 	bool:E_GEO_HOSTING					// "hosting": true
@@ -121,6 +131,33 @@ stock GetPlayerCountryName(playerid, output[], const len = sizeof(output)) {
 	return 0;
 }
 
+stock GetPlayerCity(playerid, output[], const len = sizeof(output)) {
+	if(!IsPlayerConnected(playerid)) {
+		return 1;
+	}
+
+	if(!GeoData[playerid][E_GEO_READY]) {
+		return 2;
+	}
+
+	output[0] = EOS;
+	strcat(output, GeoData[playerid][E_GEO_CITY], len);
+	return 0;
+}
+
+stock GetPlayerISP(playerid, output[], len = sizeof output) {
+    if(!IsPlayerConnected(playerid)) {
+        return 1;
+    }
+
+    if(!GeoData[playerid][E_GEO_READY]) {
+        return 2;
+    }
+
+    strcat(output, GeoData[playerid][E_GEO_ISP], len);
+    return 0;
+}
+
 stock GetPlayerIPBlock(playerid, &block) {
 	if(!IsPlayerConnected(playerid)) {
 		return 1;
@@ -152,6 +189,8 @@ static ResetState(playerid)
 	GeoData[playerid][E_GEO_STATUS][0] = EOS;
 	GeoData[playerid][E_GEO_MESSAGE][0] = EOS;
 	GeoData[playerid][E_GEO_NAME][0] = EOS;
+	GeoData[playerid][E_GEO_CITY][0] = EOS;
+	GeoData[playerid][E_GEO_ISP][0] = EOS;
 	GeoData[playerid][E_GEO_CODE][0] = EOS;
 	GeoData[playerid][E_GEO_PROXY] = false;
 	GeoData[playerid][E_GEO_HOSTING] = false;
@@ -173,7 +212,7 @@ _geoip_doRequest(const addr[16], playerid) {
 	Logger_Dbg("geoip", "requesting ip data", Logger_S("addr", addr), Logger_I("playerid", playerid));
 
 	new requestAddress[88];
-	format(requestAddress, sizeof(requestAddress), "ip-api.com/json/%s?fields=status,message,country,countryCode,proxy,hosting", addr);
+	format(requestAddress, sizeof(requestAddress), "ip-api.com/json/%s?fields=status,message,country,countryCode,city,isp,proxy,hosting", addr);
 	HTTP(playerid, HTTP_GET, requestAddress, "", "OnGeoResponse");
 }
 
@@ -232,6 +271,14 @@ hook OnGeoResponse(playerid, response_code, data[]) {
 		startIndex = strfind(data, "\"countryCode\":\"", false, endIndex) + 15;
 		endIndex = strfind(data, "\",", false, startIndex);
 		strmid(GeoData[playerid][E_GEO_CODE], data, startIndex, endIndex);
+
+		startIndex = strfind(data, "\"city\":\"", false, endIndex) + 8;
+		endIndex = strfind(data, "\",", false, startIndex);
+		strmid(GeoData[playerid][E_GEO_CITY], data, startIndex, endIndex);
+
+		startIndex = strfind(data, "\"isp\":\"", false, endIndex) + 7;
+		endIndex = strfind(data, "\",", false, startIndex);
+		strmid(GeoData[playerid][E_GEO_ISP], data, startIndex, endIndex);
 		
 		startIndex = strfind(data, "\"proxy\":", false, endIndex) + 8;
 		GeoData[playerid][E_GEO_PROXY] = data[startIndex] == 't';
@@ -240,7 +287,7 @@ hook OnGeoResponse(playerid, response_code, data[]) {
 		GeoData[playerid][E_GEO_HOSTING] = data[startIndex] == 't';
 	}
 
-	Logger_Dbg("geoip", "extracted ip data for player", Logger_S("status", GeoData[playerid][E_GEO_STATUS]), Logger_S("message", GeoData[playerid][E_GEO_MESSAGE]), Logger_I("country", GeoData[playerid][E_GEO_NAME]), Logger_S("code", GeoData[playerid][E_GEO_CODE]), Logger_I("proxy", GeoData[playerid][E_GEO_PROXY]), Logger_S("hosting", GeoData[playerid][E_GEO_HOSTING]));
+	Logger_Dbg("geoip", "extracted ip data for player", Logger_S("status", GeoData[playerid][E_GEO_STATUS]), Logger_S("message", GeoData[playerid][E_GEO_MESSAGE]), Logger_I("country", GeoData[playerid][E_GEO_NAME]), Logger_S("isp", GeoData[playerid][E_GEO_ISP]), Logger_S("city", GeoData[playerid][E_GEO_CITY]), Logger_S("code", GeoData[playerid][E_GEO_CODE]), Logger_I("proxy", GeoData[playerid][E_GEO_PROXY]), Logger_S("hosting", GeoData[playerid][E_GEO_HOSTING]));
 
 	CallLocalFunction("OnGeoDataReady", "d", playerid);
 	return 1;
